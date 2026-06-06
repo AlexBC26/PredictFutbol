@@ -9,6 +9,11 @@ export default defineConfig({
         target: 'https://api.football-data.org',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api-football/, '')
+      },
+      '/api-anthropic': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-anthropic/, '')
       }
     }
   }

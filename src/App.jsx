@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { analizarPartido } from "./claude"
 
 const COMPETICIONES = [
   { nombre: "LaLiga", codigo: "PD" },
@@ -16,8 +17,11 @@ function App() {
   const [jornada, setJornada] = useState(1)
   const [partidos, setPartidos] = useState([])
   const [totalJornadas, setTotalJornadas] = useState(38)
+  const [analisis, setAnalisis] = useState({})
+  const [cargando, setCargando] = useState({})
 
   useEffect(() => {
+    setAnalisis({})
     fetch(`/api-football/v4/competitions/${competicion}/matches?matchday=${jornada}`, {
       headers: {
         "X-Auth-Token": import.meta.env.VITE_FOOTBALL_API_KEY
@@ -31,6 +35,18 @@ function App() {
         }
       })
   }, [competicion, jornada])
+
+  async function handleAnalizar(partido) {
+    const id = partido.id
+    setCargando(prev => ({ ...prev, [id]: true }))
+    const texto = await analizarPartido(
+      partido.homeTeam.name,
+      partido.awayTeam.name,
+      COMPETICIONES.find(c => c.codigo === competicion)?.nombre
+    )
+    setAnalisis(prev => ({ ...prev, [id]: texto }))
+    setCargando(prev => ({ ...prev, [id]: false }))
+  }
 
   return (
     <div>
@@ -49,11 +65,16 @@ function App() {
       </select>
 
       {partidos.map(partido => (
-        <div key={partido.id}>
-          <span>{partido.homeTeam.name}</span>
-          <span> vs </span>
-          <span>{partido.awayTeam.name}</span>
-          <span> — {partido.status}</span>
+        <div key={partido.id} style={{ marginBottom: "1rem", borderBottom: "1px solid #ccc", paddingBottom: "1rem" }}>
+          <strong>{partido.homeTeam.name} vs {partido.awayTeam.name}</strong>
+          <span style={{ marginLeft: "1rem", color: "gray" }}>{partido.status}</span>
+          <br />
+          <button onClick={() => handleAnalizar(partido)} disabled={cargando[partido.id]}>
+            {cargando[partido.id] ? "Analizando..." : "Analizar con IA"}
+          </button>
+          {analisis[partido.id] && (
+            <p style={{ marginTop: "0.5rem" }}>{analisis[partido.id]}</p>
+          )}
         </div>
       ))}
     </div>
